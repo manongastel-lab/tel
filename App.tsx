@@ -77,7 +77,7 @@ const ContactList = ({
             className={`flex items-center p-3 cursor-pointer transition-colors relative group ${activeId === r.id ? 'bg-[#3390EC] text-white' : 'hover:bg-gray-50'}`}
           >
             <div className="w-12 h-12 rounded-full overflow-hidden mr-3 bg-gray-200 flex-shrink-0 border-2 border-transparent group-hover:border-white/50">
-              <img src={r.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${r.name}&backgroundColor=3390EC,242F3D,87A47A`} alt={r.name} className="w-full h-full object-cover" />
+              <img src={r.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(r.name)}&backgroundColor=3390EC,242F3D,87A47A`} alt={r.name} className="w-full h-full object-cover" />
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex justify-between items-baseline">
@@ -141,14 +141,12 @@ const ChatPanel = ({
 
   return (
     <div className="flex-1 flex flex-col relative h-full bg-[#E7EBF0] overflow-hidden">
-      {/* Dynamic Background Pattern */}
       <div className="absolute inset-0 pointer-events-none opacity-20 bg-[url('https://www.transparenttextures.com/patterns/graphy.png')] z-0"></div>
 
-      {/* Header */}
       <div className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 z-10 shadow-sm">
         <div className="flex items-center space-x-3">
           <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-100">
-            <img src={recipient.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${recipient.name}`} alt="" />
+            <img src={recipient.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(recipient.name)}`} alt="" />
           </div>
           <div className="flex flex-col leading-tight">
             <span className="font-bold text-gray-800 text-sm">{recipient.name}</span>
@@ -162,7 +160,6 @@ const ChatPanel = ({
         </div>
       </div>
 
-      {/* Messages */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-4 z-10 custom-scrollbar">
         {messages.length === 0 ? (
           <div className="flex justify-center mt-12">
@@ -189,7 +186,6 @@ const ChatPanel = ({
         )}
       </div>
 
-      {/* Input */}
       <div className="p-4 bg-white z-20 flex items-center space-x-3 shadow-[0_-4px_12px_rgba(0,0,0,0.03)]">
         <button className="text-gray-400 hover:text-[#3390EC] transition-colors p-2">
           <i className="fas fa-paperclip text-xl"></i>
@@ -224,15 +220,14 @@ const ChatPanel = ({
   );
 };
 
-// Fixed: Added optional 'children' to Modal props type to resolve TS error at call sites
 const Modal = ({ isOpen, onClose, title, children }: { isOpen: boolean, onClose: () => void, title: string, children?: React.ReactNode }) => {
   if (!isOpen) return null;
   return (
-    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col animate-in zoom-in duration-300">
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col">
         <div className="p-5 border-b border-gray-100 flex justify-between items-center bg-[#242F3D] text-white">
           <h2 className="font-bold text-lg">{title}</h2>
-          <button onClick={onClose} className="hover:rotate-90 transition-transform"><i className="fas fa-times"></i></button>
+          <button onClick={onClose}><i className="fas fa-times"></i></button>
         </div>
         <div className="p-6">{children}</div>
       </div>
@@ -240,12 +235,15 @@ const Modal = ({ isOpen, onClose, title, children }: { isOpen: boolean, onClose:
   );
 };
 
-// --- Main App ---
-
 export default function App() {
   const [config, setConfig] = useState<AppConfig>(() => {
-    const saved = localStorage.getItem('tg_messenger_v2');
-    return saved ? JSON.parse(saved) : {
+    try {
+      const saved = localStorage.getItem('tg_messenger_v2');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {
+      console.error('Failed to parse config:', e);
+    }
+    return {
       botToken: '',
       recipients: [
         { id: '12345678', name: 'Saved Messages', lastMessage: 'Cloud storage for you', lastTime: '00:00' },
@@ -259,7 +257,6 @@ export default function App() {
   const [showAddContact, setShowAddContact] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Forms
   const [newContactName, setNewContactName] = useState('');
   const [newContactId, setNewContactId] = useState('');
   const [tempToken, setTempToken] = useState(config.botToken);
@@ -298,7 +295,6 @@ export default function App() {
 
     try {
       await sendTelegramMessage(config.botToken, activeId, text);
-      
       setConfig(prev => ({
         ...prev,
         recipients: prev.recipients.map(r => r.id === activeId ? {
@@ -360,7 +356,6 @@ export default function App() {
         botConfigured={!!config.botToken}
       />
 
-      {/* Settings Modal */}
       <Modal isOpen={showSettings} onClose={() => setShowSettings(false)} title="Bot Settings">
         <div className="space-y-6">
           <div className="space-y-2">
@@ -375,24 +370,18 @@ export default function App() {
                 className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-xl text-sm focus:ring-2 focus:ring-[#3390EC] outline-none transition-all"
               />
             </div>
-            <p className="text-[10px] text-gray-400 italic">Create a bot with @BotFather on Telegram to get a token.</p>
           </div>
-          
           <div className="space-y-2">
             <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Active Contacts</label>
             <div className="max-h-40 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
               {config.recipients.map(r => (
                 <div key={r.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg border border-gray-100">
                   <div className="flex items-center space-x-2">
-                    <img src={`https://api.dicebear.com/7.x/initials/svg?seed=${r.name}&size=32`} className="rounded-full" alt="" />
+                    <img src={`https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(r.name)}&size=32`} className="rounded-full" alt="" />
                     <span className="text-xs font-bold">{r.name}</span>
                   </div>
                   <button 
-                    onClick={() => {
-                      if (confirm(`Remove ${r.name}?`)) {
-                        setConfig(prev => ({ ...prev, recipients: prev.recipients.filter(x => x.id !== r.id) }));
-                      }
-                    }}
+                    onClick={() => setConfig(prev => ({ ...prev, recipients: prev.recipients.filter(x => x.id !== r.id) }))}
                     className="text-red-300 hover:text-red-500"
                   >
                     <i className="fas fa-trash-alt text-xs"></i>
@@ -401,17 +390,12 @@ export default function App() {
               ))}
             </div>
           </div>
-
-          <button 
-            onClick={handleSaveSettings}
-            className="w-full bg-[#3390EC] text-white py-3 rounded-xl font-bold shadow-lg shadow-blue-100 hover:bg-[#2b7bc9] transition-all"
-          >
+          <button onClick={handleSaveSettings} className="w-full bg-[#3390EC] text-white py-3 rounded-xl font-bold hover:bg-[#2b7bc9] transition-all">
             Save Configuration
           </button>
         </div>
       </Modal>
 
-      {/* Add Contact Modal */}
       <Modal isOpen={showAddContact} onClose={() => setShowAddContact(false)} title="Add New Contact">
         <div className="space-y-4">
           <div className="space-y-1">
@@ -433,13 +417,8 @@ export default function App() {
               placeholder="e.g. 12345678"
               className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl text-sm focus:ring-2 focus:ring-[#3390EC] outline-none"
             />
-            <p className="text-[10px] text-gray-400 italic mt-1">Chat ID is a unique number for each user/group.</p>
           </div>
-          <button 
-            onClick={handleAddContact}
-            disabled={!newContactName || !newContactId}
-            className="w-full bg-[#3390EC] text-white py-3 rounded-xl font-bold disabled:bg-gray-200 transition-all mt-4"
-          >
+          <button onClick={handleAddContact} disabled={!newContactName || !newContactId} className="w-full bg-[#3390EC] text-white py-3 rounded-xl font-bold disabled:bg-gray-200 transition-all">
             Add Contact
           </button>
         </div>
