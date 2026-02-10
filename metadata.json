@@ -1,0 +1,5 @@
+{
+  "name": "Telegram Bot Messenger",
+  "description": "A Telegram-style web dashboard to manage bot IDs, recipient lists, and send messages using the Telegram Bot API.",
+  "requestFramePermissions": []
+}
